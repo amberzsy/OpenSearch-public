@@ -86,6 +86,12 @@ public abstract class AbstractQueryBuilder<QB extends AbstractQueryBuilder<QB>> 
         queryName = in.readOptionalString();
     }
 
+    protected AbstractQueryBuilder(String queryName, float boost) throws IOException {
+        this.boost = boost;
+        checkNegativeBoost(boost);
+        this.queryName = queryName;
+    }
+
     @Override
     public final void writeTo(StreamOutput out) throws IOException {
         out.writeFloat(boost);

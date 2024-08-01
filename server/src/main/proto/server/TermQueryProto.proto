@@ -1,0 +1,10 @@
+syntax = "proto3";
+package org.opensearch.server.proto;
+
+message TermQuery {
+  optional string name = 1;
+  optional string fieldName = 2;
+  optional bool caseInsensitive = 3;
+  // TODO: change to object
+  optional string value = 4;
+}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+package org.opensearch.server.proto;
+
+message MatchQuery {
+  optional string name = 1;
+  optional string fieldName = 2;
+  // TODO: change to object
+  optional string value = 3;
+  optional string analyze = 4;
+  optional string minimumShouldMatch = 5;
+}

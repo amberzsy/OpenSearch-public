@@ -44,6 +44,8 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.mapper.ConstantFieldType;
 import org.opensearch.index.mapper.MappedFieldType;
+import org.opensearch.server.proto.MatchQueryProto;
+import org.opensearch.server.proto.TermQueryProto;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -116,6 +118,16 @@ public class TermQueryBuilder extends BaseTermQueryBuilder<TermQueryBuilder> {
             caseInsensitive = in.readBoolean();
         }
     }
+
+
+    public TermQueryBuilder(TermQueryProto.TermQuery queryProto) throws IOException {
+        super(queryProto.getFieldName(), queryProto.getValue());
+        boost(DEFAULT_BOOST);
+        if (queryProto.hasCaseInsensitive()) {
+            caseInsensitive(queryProto.getCaseInsensitive());
+        }
+    }
+
 
     @Override
     protected void doWriteTo(StreamOutput out) throws IOException {

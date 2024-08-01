@@ -1,0 +1,15 @@
+syntax = "proto3";
+package org.opensearch.server.proto;
+
+message MultiMatchQuery {
+  optional string type = 1;
+  optional string analyzer = 2;
+  optional float cutoffFrequency = 3;
+  optional FieldAndBoost fieldAndBoost = 4;
+  // TODO: add more
+}
+
+message FieldAndBoost {
+  optional string field = 1;
+  optional float boost = 2;
+}

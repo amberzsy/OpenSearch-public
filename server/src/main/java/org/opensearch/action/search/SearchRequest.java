@@ -51,6 +51,7 @@ import org.opensearch.search.Scroll;
 import org.opensearch.search.builder.PointInTimeBuilder;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.internal.SearchContext;
+import org.opensearch.server.proto.SearchRequestProto;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -272,6 +273,18 @@ public class SearchRequest extends ActionRequest implements IndicesRequest.Repla
         if (in.getVersion().onOrAfter(Version.V_2_12_0)) {
             phaseTook = in.readOptionalBoolean();
         }
+    }
+
+    public SearchRequest(byte[] in) throws IOException {
+        this();
+        SearchRequestProto.SearchRequest searchRequestProto = SearchRequestProto.SearchRequest.parseFrom(in);
+        indices = searchRequestProto.getIndicesList().toArray(new String[0]);
+        routing = searchRequestProto.getRouting();
+        preference = searchRequestProto.getPreference();
+        batchedReduceSize = searchRequestProto.getBatchedReduceSize();
+        source = new SearchSourceBuilder(searchRequestProto.getSourceBuilder());
+        searchType = SearchType.QUERY_THEN_FETCH;
+        batchedReduceSize = DEFAULT_BATCHED_REDUCE_SIZE;
     }
 
     @Override

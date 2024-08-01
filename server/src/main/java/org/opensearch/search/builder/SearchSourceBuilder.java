@@ -54,6 +54,14 @@ import org.opensearch.core.xcontent.XContentHelper;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.mapper.DerivedField;
 import org.opensearch.index.mapper.DerivedFieldMapper;
+import org.opensearch.index.query.BoolQueryBuilder;
+import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.index.query.TermQueryBuilder;
+import org.opensearch.server.proto.BoolQueryProto;
+import org.opensearch.server.proto.MatchQueryProto;
+import org.opensearch.server.proto.SearchRequestProto;
+import org.opensearch.server.proto.TermQueryProto;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.Rewriteable;
@@ -229,6 +237,40 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
      * Constructs a new search source builder.
      */
     public SearchSourceBuilder() {}
+
+    public SearchSourceBuilder(SearchRequestProto.SearchRequest.SourceBuilder sourceBuilderProto) throws IOException {
+        this();
+        if (sourceBuilderProto.hasFrom()) {
+            from = sourceBuilderProto.getFrom();
+        }
+        if (sourceBuilderProto.hasSize()) {
+            size = sourceBuilderProto.getSize();
+        }
+        if (sourceBuilderProto.hasTerminateAfter()) {
+            terminateAfter = sourceBuilderProto.getTerminateAfter();
+        }
+        if (sourceBuilderProto.hasQuery() && sourceBuilderProto.getQuery().hasBool()) {
+            BoolQueryProto.BoolQuery boolQueryProto = sourceBuilderProto.getQuery().getBool();
+            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+
+            // Handle must clauses
+            for (MatchQueryProto.MatchQuery matchQueryProto : boolQueryProto.getMustList()) {
+                MatchQueryBuilder matchQueryBuilder = QueryBuilders.matchQuery(matchQueryProto.getFieldName(), matchQueryProto.getValue());
+                boolQueryBuilder.must(matchQueryBuilder);
+            }
+
+            // Handle filter clauses
+            for (TermQueryProto.TermQuery termQueryProto : boolQueryProto.getFilterList()) {
+                TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(termQueryProto.getFieldName(), termQueryProto.getValue());
+                boolQueryBuilder.filter(termQueryBuilder);
+            }
+
+            queryBuilder = boolQueryBuilder;
+        } else {
+            throw new IllegalArgumentException("Expected a BoolQuery in the source builder");
+        }
+
+    }
 
     /**
      * Read from a stream.

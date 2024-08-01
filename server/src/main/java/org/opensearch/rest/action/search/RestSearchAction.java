@@ -31,7 +31,7 @@
  */
 
 package org.opensearch.rest.action.search;
-
+import java.util.Map;
 import org.opensearch.ExceptionsHelper;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.search.SearchAction;
@@ -39,6 +39,7 @@ import org.opensearch.action.search.SearchContextId;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.client.node.NodeClient;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.Booleans;
 import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
@@ -49,7 +50,6 @@ import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestActions;
 import org.opensearch.rest.action.RestCancellableNodeClient;
 import org.opensearch.rest.action.RestStatusToXContentListener;
-import org.opensearch.search.Scroll;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.fetch.StoredFieldsContext;
@@ -60,17 +60,12 @@ import org.opensearch.search.suggest.SuggestBuilder;
 import org.opensearch.search.suggest.term.TermSuggestionBuilder.SuggestMode;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.IntConsumer;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static org.opensearch.action.ValidateActions.addValidationError;
-import static org.opensearch.common.unit.TimeValue.parseTimeValue;
 import static org.opensearch.rest.RestRequest.Method.GET;
 import static org.opensearch.rest.RestRequest.Method.POST;
 import static org.opensearch.search.suggest.SuggestBuilders.termSuggestion;
@@ -106,17 +101,17 @@ public class RestSearchAction extends BaseRestHandler {
     public List<Route> routes() {
         return unmodifiableList(
             asList(
-                new Route(GET, "/_search"),
-                new Route(POST, "/_search"),
-                new Route(GET, "/{index}/_search"),
-                new Route(POST, "/{index}/_search")
+                new Route(GET, "/_search_proto"),
+                new Route(POST, "/_search_proto"),
+                new Route(GET, "/{index}/_search_proto"),
+                new Route(POST, "/{index}/_search_proto")
             )
         );
     }
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        SearchRequest searchRequest = new SearchRequest();
+//        SearchRequest searchRequest = new SearchRequest();
         /*
          * We have to pull out the call to `source().size(size)` because
          * _update_by_query and _delete_by_query uses this same parsing
@@ -129,11 +124,12 @@ public class RestSearchAction extends BaseRestHandler {
          * be null later. If that is confusing to you then you are in good
          * company.
          */
-        IntConsumer setSize = size -> searchRequest.source().size(size);
-        request.withContentOrSourceParamParserOrNull(
-            parser -> parseSearchRequest(searchRequest, request, parser, client.getNamedWriteableRegistry(), setSize)
-        );
+        BytesReference content = request.content();
+        byte[] contentBytes = BytesReference.toBytes(content);
+        SearchRequest searchRequest = new SearchRequest(contentBytes);
 
+        IntConsumer setSize = size -> searchRequest.source().size(size);
+        request.param("index");
         return channel -> {
             RestCancellableNodeClient cancelClient = new RestCancellableNodeClient(client, request.getHttpChannel());
             cancelClient.execute(SearchAction.INSTANCE, searchRequest, new RestStatusToXContentListener<>(channel));
@@ -147,6 +143,7 @@ public class RestSearchAction extends BaseRestHandler {
      *        parameter
      * @param setSize how the size url parameter is handled. {@code udpate_by_query} and regular search differ here.
      */
+    // SKIP as we use proto
     public static void parseSearchRequest(
         SearchRequest searchRequest,
         RestRequest request,
@@ -155,75 +152,77 @@ public class RestSearchAction extends BaseRestHandler {
         IntConsumer setSize
     ) throws IOException {
 
-        if (searchRequest.source() == null) {
-            searchRequest.source(new SearchSourceBuilder());
-        }
-        searchRequest.indices(Strings.splitStringByCommaToArray(request.param("index")));
-        if (requestContentParser != null) {
-            searchRequest.source().parseXContent(requestContentParser, true);
-        }
-
-        final int batchedReduceSize = request.paramAsInt("batched_reduce_size", searchRequest.getBatchedReduceSize());
-        searchRequest.setBatchedReduceSize(batchedReduceSize);
-        if (request.hasParam("pre_filter_shard_size")) {
-            searchRequest.setPreFilterShardSize(request.paramAsInt("pre_filter_shard_size", SearchRequest.DEFAULT_PRE_FILTER_SHARD_SIZE));
-        }
-
-        if (request.hasParam("max_concurrent_shard_requests")) {
-            // only set if we have the parameter since we auto adjust the max concurrency on the coordinator
-            // based on the number of nodes in the cluster
-            final int maxConcurrentShardRequests = request.paramAsInt(
-                "max_concurrent_shard_requests",
-                searchRequest.getMaxConcurrentShardRequests()
-            );
-            searchRequest.setMaxConcurrentShardRequests(maxConcurrentShardRequests);
-        }
-
-        if (request.hasParam("allow_partial_search_results")) {
-            // only set if we have the parameter passed to override the cluster-level default
-            searchRequest.allowPartialSearchResults(request.paramAsBoolean("allow_partial_search_results", null));
-        }
-
-        if (request.hasParam("phase_took")) {
-            // only set if we have the parameter passed to override the cluster-level default
-            // else phaseTook = null
-            searchRequest.setPhaseTook(request.paramAsBoolean("phase_took", true));
-        }
-
-        // do not allow 'query_and_fetch' or 'dfs_query_and_fetch' search types
-        // from the REST layer. these modes are an internal optimization and should
-        // not be specified explicitly by the user.
-        String searchType = request.param("search_type");
-        if ("query_and_fetch".equals(searchType) || "dfs_query_and_fetch".equals(searchType)) {
-            throw new IllegalArgumentException("Unsupported search type [" + searchType + "]");
-        } else {
-            searchRequest.searchType(searchType);
-        }
-        parseSearchSource(searchRequest.source(), request, setSize);
-        searchRequest.requestCache(request.paramAsBoolean("request_cache", searchRequest.requestCache()));
-
-        String scroll = request.param("scroll");
-        if (scroll != null) {
-            searchRequest.scroll(new Scroll(parseTimeValue(scroll, null, "scroll")));
-        }
-
-        searchRequest.routing(request.param("routing"));
-        searchRequest.preference(request.param("preference"));
-        searchRequest.indicesOptions(IndicesOptions.fromRequest(request, searchRequest.indicesOptions()));
-        searchRequest.pipeline(request.param("search_pipeline"));
-
-        checkRestTotalHits(request, searchRequest);
-        request.paramAsBoolean(INCLUDE_NAMED_QUERIES_SCORE_PARAM, false);
-
-        if (searchRequest.pointInTimeBuilder() != null) {
-            preparePointInTime(searchRequest, request, namedWriteableRegistry);
-        } else {
-            searchRequest.setCcsMinimizeRoundtrips(
-                request.paramAsBoolean("ccs_minimize_roundtrips", searchRequest.isCcsMinimizeRoundtrips())
-            );
-        }
-
-        searchRequest.setCancelAfterTimeInterval(request.paramAsTime("cancel_after_time_interval", null));
+//        if (searchRequest.source() == null) {
+//            searchRequest.source(new SearchSourceBuilder());
+//        }
+//        System.out.println("========= request.param(\"index\") " + request.param("index"));
+//        searchRequest.indices(Strings.splitStringByCommaToArray(request.param("index")));
+//        if (requestContentParser != null) {
+//            searchRequest.source().parseXContent(requestContentParser, true);
+//        }
+//
+//        final int batchedReduceSize = request.paramAsInt("batched_reduce_size", searchRequest.getBatchedReduceSize());
+//        searchRequest.setBatchedReduceSize(batchedReduceSize);
+//        if (request.hasParam("pre_filter_shard_size")) {
+//            searchRequest.setPreFilterShardSize(request.paramAsInt("pre_filter_shard_size", SearchRequest.DEFAULT_PRE_FILTER_SHARD_SIZE));
+//        }
+//
+//        if (request.hasParam("max_concurrent_shard_requests")) {
+//            // only set if we have the parameter since we auto adjust the max concurrency on the coordinator
+//            // based on the number of nodes in the cluster
+//            final int maxConcurrentShardRequests = request.paramAsInt(
+//                "max_concurrent_shard_requests",
+//                searchRequest.getMaxConcurrentShardRequests()
+//            );
+//            searchRequest.setMaxConcurrentShardRequests(maxConcurrentShardRequests);
+//        }
+//
+//        if (request.hasParam("allow_partial_search_results")) {
+//            // only set if we have the parameter passed to override the cluster-level default
+//            searchRequest.allowPartialSearchResults(request.paramAsBoolean("allow_partial_search_results", null));
+//        }
+//
+//        if (request.hasParam("phase_took")) {
+//            // only set if we have the parameter passed to override the cluster-level default
+//            // else phaseTook = null
+//            searchRequest.setPhaseTook(request.paramAsBoolean("phase_took", true));
+//        }
+//
+//        // do not allow 'query_and_fetch' or 'dfs_query_and_fetch' search types
+//        // from the REST layer. these modes are an internal optimization and should
+//        // not be specified explicitly by the user.
+//        String searchType = request.param("search_type");
+//        if ("query_and_fetch".equals(searchType) || "dfs_query_and_fetch".equals(searchType)) {
+//            throw new IllegalArgumentException("Unsupported search type [" + searchType + "]");
+//        } else {
+//            searchRequest.searchType(searchType);
+//        }
+//        System.out.println("================ setSize: " + setSize);
+//        parseSearchSource(searchRequest.source(), request, setSize);
+//        searchRequest.requestCache(request.paramAsBoolean("request_cache", searchRequest.requestCache()));
+//
+//        String scroll = request.param("scroll");
+//        if (scroll != null) {
+//            searchRequest.scroll(new Scroll(parseTimeValue(scroll, null, "scroll")));
+//        }
+//
+//        searchRequest.routing(request.param("routing"));
+//        searchRequest.preference(request.param("preference"));
+//        searchRequest.indicesOptions(IndicesOptions.fromRequest(request, searchRequest.indicesOptions()));
+//        searchRequest.pipeline(request.param("search_pipeline"));
+//
+//        checkRestTotalHits(request, searchRequest);
+//        request.paramAsBoolean(INCLUDE_NAMED_QUERIES_SCORE_PARAM, false);
+//
+//        if (searchRequest.pointInTimeBuilder() != null) {
+//            preparePointInTime(searchRequest, request, namedWriteableRegistry);
+//        } else {
+//            searchRequest.setCcsMinimizeRoundtrips(
+//                request.paramAsBoolean("ccs_minimize_roundtrips", searchRequest.isCcsMinimizeRoundtrips())
+//            );
+//        }
+//
+//        searchRequest.setCancelAfterTimeInterval(request.paramAsTime("cancel_after_time_interval", null));
     }
 
     /**
@@ -304,6 +303,7 @@ public class RestSearchAction extends BaseRestHandler {
             }
         }
 
+        // searchSource sort
         String sSorts = request.param("sort");
         if (sSorts != null) {
             String[] sorts = Strings.splitStringByCommaToArray(sSorts);
@@ -322,7 +322,6 @@ public class RestSearchAction extends BaseRestHandler {
                 }
             }
         }
-
         String sStats = request.param("stats");
         if (sStats != null) {
             searchSourceBuilder.stats(Arrays.asList(Strings.splitStringByCommaToArray(sStats)));

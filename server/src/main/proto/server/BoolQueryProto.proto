@@ -1,0 +1,10 @@
+syntax = "proto3";
+package org.opensearch.server.proto;
+
+import "server/MatchQueryProto.proto";
+import "server/TermQueryProto.proto";
+
+message BoolQuery {
+  repeated MatchQuery must = 1;
+  repeated TermQuery filter = 2;
+}

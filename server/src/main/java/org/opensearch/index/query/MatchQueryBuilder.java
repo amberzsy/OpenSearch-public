@@ -46,6 +46,7 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.query.support.QueryParsers;
 import org.opensearch.index.search.MatchQuery;
 import org.opensearch.index.search.MatchQuery.ZeroTermsQuery;
+import org.opensearch.server.proto.MatchQueryProto;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -127,6 +128,14 @@ public class MatchQueryBuilder extends AbstractQueryBuilder<MatchQueryBuilder> {
         }
         this.fieldName = fieldName;
         this.value = value;
+    }
+
+    public MatchQueryBuilder(MatchQueryProto.MatchQuery queryProto) throws IOException {
+        super("", DEFAULT_BOOST);
+        fieldName = queryProto.getFieldName();
+        value = queryProto.getValue();
+        boost = DEFAULT_BOOST;
+        queryName = "match";
     }
 
     /**

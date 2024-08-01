@@ -1,0 +1,91 @@
+syntax = "proto3";
+package org.opensearch.server.proto;
+
+import "server/MatchQueryProto.proto";
+import "server/TermQueryProto.proto";
+import "server/BoolQueryProto.proto";
+
+message SearchRequest {
+  optional string localClusterAlias = 1;
+  optional int64 absoluteStartMillis = 2;
+  optional bool finalReduce = 3;
+  optional string routing = 5;
+  optional SearchType searchType = 6;
+  optional string preference = 7;
+  optional bool requestCache = 8;
+  optional bool allowPartialSearchResults = 9;
+  optional Scroll scroll = 10;
+  optional int32 preFilterShardSize = 11;
+  optional IndicesOptions indicesOptions = 12;
+  optional string pipeline = 13;
+  optional bool phaseTook = 14;
+  optional int32 batchedReduceSize = 15;
+  optional bool ccsMinimizeRoundtrips = 16;
+  optional int32 maxConcurrentShardRequests = 17;
+  optional int32 explain = 18;
+  repeated string indices = 19;
+  optional SourceBuilder sourceBuilder = 20;
+
+  message SourceBuilder {
+    optional int32 from = 1;
+    optional int32 size = 2;
+    optional int32 timeout = 3;
+    optional int32 terminateAfter = 4;
+    optional string analyzer = 5;
+    optional int32 trackTotalHitsUpToInt = 6;
+    optional bool trackTotalHitsUpToBool = 7;
+    optional FetchSourceContext source = 8;
+    optional bool explain = 9;
+    optional bool version = 10;
+    optional QueryBuilder query = 11;
+    // optional indicesBoost
+    // SUGGEST_FIELD
+    // HIGHLIGHT_FIELD
+    // SUGGEST_FIELD
+    // SORT_FIELD
+    // AGGREGATIONS_FIELD
+    // SLICE
+    // COLLAPSE
+    // TODO: add more...
+
+    message QueryBuilder {
+      optional float boost = 1;
+      optional BoolQuery bool = 2;
+    }
+
+  }
+
+  message FetchSourceContext {
+    // _source
+
+  }
+  message StoredField {
+
+  }
+
+  message DocValueField {
+    optional string field = 1;
+    optional string format = 2;
+  }
+}
+
+enum SearchType {
+  QUERY_THEN_FETCH = 0;
+  DFS_QUERY_THEN_FETCH = 1;
+}
+
+message Scroll {
+  string keepAlive = 1;
+}
+
+message IndicesOptions {
+  bool ignoreUnavailable = 1;
+  bool allowNoIndices = 2;
+  bool expandWildcardsOpen = 3;
+  bool expandWildcardsClosed = 4;
+  bool expandWildcardsHidden = 5;
+  bool allowAliasesToMultipleIndices = 6;
+  bool forbidClosedIndices = 7;
+  bool ignoreAliases = 8;
+  bool ignoreThrottled = 9;
+}
