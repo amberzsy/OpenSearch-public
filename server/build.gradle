@@ -129,6 +129,10 @@ dependencies {
   // https://mvnrepository.com/artifact/org.roaringbitmap/RoaringBitmap
   implementation 'org.roaringbitmap:RoaringBitmap:1.2.1'
 
+  api 'io.grpc:grpc-netty-shaded:1.15.1'
+  api 'io.grpc:grpc-protobuf:1.15.1'
+  api 'io.grpc:grpc-stub:1.15.1'
+
   testImplementation(project(":test:framework")) {
     // tests use the locally compiled version of server
     exclude group: 'org.opensearch', module: 'server'
@@ -224,6 +228,12 @@ protobuf {
     artifact = "com.google.protobuf:protoc:${versions.protobuf}"
   }
 
+  plugins {
+          grpc {
+              artifact = 'io.grpc:protoc-gen-grpc-java:1.15.1'
+          }
+      }
+
   generateProtoTasks {
     all().each { task ->
       task.builtins {
@@ -231,8 +241,12 @@ protobuf {
           option "annotate_code"
         }
       }
+      task.plugins {
+        grpc { }
+      }
     }
   }
+
 }
 
 tasks.named("processResources").configure {
@@ -334,7 +348,25 @@ tasks.named("thirdPartyAudit").configure {
             'com.google.common.geometry.S2Projections',
             'com.google.common.geometry.S2Point',
             'com.google.common.geometry.S2$Metric',
-            'com.google.common.geometry.S2LatLng'
+            'com.google.common.geometry.S2LatLng',
+
+            // from grpc-netty-shaded
+            'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$1',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$2',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$3',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueConsumerNodeRef',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueProducerNodeRef',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.LinkedQueueNode',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess'
         ] + (BuildParams.runtimeJavaVersion < JavaVersion.VERSION_20) ? [] : [
             'jdk.incubator.vector.ByteVector',
             'jdk.incubator.vector.FloatVector',
@@ -355,7 +387,23 @@ tasks.named("thirdPartyAudit").configure {
             'com.google.protobuf.UnsafeUtil$MemoryAccessor',
             'org.apache.logging.log4j.core.util.internal.UnsafeUtil',
             'org.apache.logging.log4j.core.util.internal.UnsafeUtil$1',
-            'reactor.core.publisher.Traces$SharedSecretsCallSiteSupplierFactory$TracingException'
+            'reactor.core.publisher.Traces$SharedSecretsCallSiteSupplierFactory$TracingException',
+            'io.grpc.netty.shaded.io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$1',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$2',
+            'io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0$3',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueConsumerNodeRef',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueProducerNodeRef',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.LinkedQueueNode',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess',
+            'io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess'
     )
 }
 
@@ -363,6 +411,7 @@ tasks.named("dependencyLicenses").configure {
     mapping from: /jackson-.*/, to: 'jackson'
     mapping from: /reactor-.*/, to: 'reactor'
     mapping from: /lucene-.*/, to: 'lucene'
+    mapping from: /grpc-.*/, to: 'grpc'
     dependencies = project.configurations.runtimeClasspath.incoming.artifactView {
         componentFilter {
             it instanceof ModuleComponentIdentifier &&
