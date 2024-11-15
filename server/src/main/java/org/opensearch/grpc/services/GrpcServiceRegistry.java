@@ -9,8 +9,6 @@
 package org.opensearch.grpc.services;
 
 import io.grpc.BindableService;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /*
