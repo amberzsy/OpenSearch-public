@@ -16,7 +16,7 @@ message BulkRequest {
   // [optional] A list of source fields to exclude from the response.
   repeated string source_excludes = 2;
   // [optional] A list of source fields to include in the response.
-  repeated string source_includes = 3 [json_name = "_source_includes",;
+//  repeated string source_includes = 3 [json_name = "_source_includes",;
   // [optional] ID of the pipeline to use to preprocess incoming documents. If the index has a default ingest pipeline specified, then setting the value to `_none` disables the default ingest pipeline for this request. If a final pipeline is configured it will always run, regardless of the value of this parameter.
   .google.protobuf.StringValue pipeline = 4;
 
@@ -57,7 +57,7 @@ message IndexBulkRequest {
   // [optional] A list of source fields to exclude from the response.
   repeated string source_excludes = 3;
   // [optional] A list of source fields to include in the response.
-  repeated string source_includes = 4 [json_name = "_source_includes",;
+//  repeated string source_includes = 4 [json_name = "_source_includes",;
   // [optional] ID of the pipeline to use to preprocess incoming documents. If the index has a default ingest pipeline specified, then setting the value to `_none` disables the default ingest pipeline for this request. If a final pipeline is configured it will always run, regardless of the value of this parameter.
   .google.protobuf.StringValue pipeline = 5;
 
@@ -782,7 +782,7 @@ message UpdateDocumentRequest {
   // [optional] A comma-separated list of source fields to exclude from the response.
   repeated string source_excludes = 4;
   // [optional] A comma-separated list of source fields to include in the response.
-  repeated string source_includes = 5 [json_name = "_source_includes",;
+//  repeated string source_includes = 5 [json_name = "_source_includes",;
   // [optional] Only perform the operation if the document has this primary term.
   .google.protobuf.Int64Value if_primary_term = 6;
   // [optional] Only perform the operation if the document has this sequence number.
@@ -896,7 +896,7 @@ message GetDocumentRequest {
   // [optional] A comma-separated list of source fields to exclude from the response.
   repeated string source_excludes = 4;
   // [optional] A comma-separated list of source fields to include in the response.
-  repeated string source_includes = 5 [json_name = "_source_includes",;
+//  repeated string source_includes = 5 [json_name = "_source_includes",;
   // [optional] Specifies a preference of which shard to retrieve results from. Available options are _local, which tells the operation to retrieve results from a locally allocated shard replica, and a custom string value assigned to a specific shard replica. By default, OpenSearch executes get document operations on random shards.
   .google.protobuf.StringValue preference = 6;
   // [optional] Specifies whether the operation should run in realtime. If false, the operation waits for the index to refresh to analyze the source to retrieve data, which makes the operation near-realtime. Default is true.
@@ -971,7 +971,7 @@ message GetDocumentSourceRequest {
   // [optional] A comma-separated list of source fields to exclude from the response.
   repeated string source_excludes = 4;
   // [optional] A comma-separated list of source fields to include in the response.
-  repeated string source_includes = 5 [json_name = "_source_includes",;
+//  repeated string source_includes = 5 [json_name = "_source_includes",;
   // [optional] Specifies the node or shard the operation should be performed on. Random by default.
   .google.protobuf.StringValue preference = 6;
   // [optional] Specifies whether the operation should run in realtime. If false, the operation waits for the index to refresh to analyze the source to retrieve data, which makes the operation near-realtime. Default is true.
