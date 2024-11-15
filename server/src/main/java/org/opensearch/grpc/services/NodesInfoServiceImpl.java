@@ -6,9 +6,8 @@
  * compatible open source license.
  */
 
-package org.opensearch.grpc.services.nodesInfo;
+package org.opensearch.grpc.services;
 
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,8 +16,6 @@ import org.opensearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.opensearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.opensearch.action.admin.cluster.node.info.PluginsAndModules;
 import org.opensearch.action.admin.cluster.node.info.proto.NodesInfoProto;
-import org.opensearch.action.admin.cluster.node.info.proto.NodesInfoProtoService;
-import org.opensearch.action.admin.cluster.node.info.proto.NodesInfoServiceGrpc;
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.cluster.node.DiscoveryNodeRole;
 import org.opensearch.core.service.ReportingService;
@@ -39,6 +36,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
+import opensearch.proto.services.NodesInfoServiceGrpc;
+
 import static org.opensearch.core.xcontent.ToXContent.EMPTY_PARAMS;
 
 public class NodesInfoServiceImpl extends NodesInfoServiceGrpc.NodesInfoServiceImplBase {
@@ -50,15 +49,15 @@ public class NodesInfoServiceImpl extends NodesInfoServiceGrpc.NodesInfoServiceI
     }
 
     @Override
-    public void getNodesInfo(NodesInfoProtoService.NodesInfoRequestProto request, StreamObserver<NodesInfoProtoService.NodesInfoResponseProto> responseObserver) {
+    public void nodesInfo(NodesInfoProto.NodesInfoRequestProto request, StreamObserver<NodesInfoProto.NodesInfoResponseProto> responseObserver) {
         NodesInfoResponse response = client.admin().cluster()
             .nodesInfo(reqFromProto(request))
             .actionGet();
         responseObserver.onNext(respToProto(response));
         responseObserver.onCompleted();
     }
-    
-    private static NodesInfoRequest reqFromProto(NodesInfoProtoService.NodesInfoRequestProto request) {
+
+    private static NodesInfoRequest reqFromProto(NodesInfoProto.NodesInfoRequestProto request) {
         String[] nodeIds = request.getNodeIdsList().toArray(new String[0]);
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest(nodeIds);
         nodesInfoRequest.timeout(request.getTimeout());
@@ -74,8 +73,8 @@ public class NodesInfoServiceImpl extends NodesInfoServiceGrpc.NodesInfoServiceI
         return nodesInfoRequest;
     }
 
-    private static NodesInfoProtoService.NodesInfoResponseProto respToProto(NodesInfoResponse response) {
-        NodesInfoProtoService.NodesInfoResponseProto.Builder builder = NodesInfoProtoService.NodesInfoResponseProto.newBuilder();
+    private static NodesInfoProto.NodesInfoResponseProto respToProto(NodesInfoResponse response) {
+        NodesInfoProto.NodesInfoResponseProto.Builder builder = NodesInfoProto.NodesInfoResponseProto.newBuilder();
 
         for (NodeInfo ni : response.getNodes()) {
             NodesInfoProto.NodesInfo.Builder nib = NodesInfoProto.NodesInfo.newBuilder()

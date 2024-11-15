@@ -14,15 +14,6 @@ package org.opensearch.action.admin.cluster.node.info.proto;
 
 option java_outer_classname = "NodesInfoProto";
 
-message StringList {
-  repeated string str_list = 1;
-}
-
-message Metrics {
-  bool all = 1;
-  StringList metric_list = 2;
-}
-
 message NodesInfoRequestProto {
   Metrics metrics = 1;
   string timeout = 2;
@@ -32,6 +23,15 @@ message NodesInfoRequestProto {
 message NodesInfoResponseProto {
   string clusterName = 1;
   repeated NodesInfo nodesInfo = 2;
+}
+
+message StringList {
+  repeated string str_list = 1;
+}
+
+message Metrics {
+  bool all = 1;
+  StringList metric_list = 2;
 }
 
 message NodesInfo {

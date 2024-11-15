@@ -147,7 +147,7 @@ import org.opensearch.gateway.remote.RemoteClusterStateCleanupManager;
 import org.opensearch.gateway.remote.RemoteClusterStateService;
 import org.opensearch.grpc.GrpcServerTransport;
 import org.opensearch.grpc.services.GrpcServiceRegistry;
-import org.opensearch.grpc.services.nodesInfo.NodesInfoServiceImpl;
+import org.opensearch.grpc.services.NodesInfoServiceImpl;
 import org.opensearch.http.HttpServerTransport;
 import org.opensearch.identity.IdentityService;
 import org.opensearch.index.IndexModule;
