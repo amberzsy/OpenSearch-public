@@ -1,0 +1,33 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ *
+ * Modifications Copyright OpenSearch Contributors. See
+ * GitHub history for details.
+ */
+
+syntax = "proto3";
+package opensearch.proto.services;
+
+import "spec/document.proto";
+
+option java_outer_classname = "Document";
+
+service DocumentService {
+  /*Consolidate to IndexDocument*/
+  rpc IndexDocument(IndexDocumentRequest) returns (IndexDocumentResponse) {}
+  rpc IndexDocumentId(IndexDocumentIdRequest) returns (IndexDocumentIdResponse) {}
+  rpc IndexDocumentCreateIdRequest(IndexDocumentCreateIdRequest) returns (IndexDocumentCreateIdResponse) {}
+
+  /*Consolidate to Bulk*/
+  rpc Bulk(BulkRequest) returns (BulkResponse) {}
+  rpc IndexBulk(IndexBulkRequest) returns (IndexBulkResponse) {}
+
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse) {}
+  rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse) {}
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse) {}
+  rpc GetDocumentSource(GetDocumentSourceRequest) returns (GetDocumentSourceResponse) {}
+}

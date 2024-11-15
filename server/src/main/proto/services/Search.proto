@@ -17,6 +17,9 @@ import "spec/search.proto";
 option java_outer_classname = "Search";
 
 service SearchService {
+  /*Consolidate to Search*/
   rpc Search(SearchRequest) returns (SearchResponse) {}
-  rpc StreamSearch(SearchRequest) returns (stream SearchResponse) {}
+  rpc IndexSearch(IndexSearchRequest) returns (IndexSearchResponse) {}
+
+  rpc Explain(ExplainRequest) returns (ExplainResponse) {}
 }
