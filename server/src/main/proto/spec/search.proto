@@ -8,7 +8,7 @@ option go_package = "opensearchpb";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/struct.proto";
-import "common.proto";
+import "spec/common.proto";
 
 // Information about the document hits returned that match the query.
 message Hits {

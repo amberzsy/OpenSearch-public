@@ -7,7 +7,7 @@ option go_package = "opensearchpb";
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/wrappers.proto";
-import "common.proto";
+import "spec/common.proto";
 
 // The bulk operation lets you add, update, or delete multiple documents in a single request, index name needs to be specified in `BulkRequestBody`
 message BulkRequest {
