@@ -1,0 +1,4 @@
+[submodule "server/src/main/proto/spec/pub"]
+	path = server/src/main/proto/spec/pub
+	url = https://github.com/amberzsy/opensearch-api-specification.git
+	branch = 532_publish_proto_files
