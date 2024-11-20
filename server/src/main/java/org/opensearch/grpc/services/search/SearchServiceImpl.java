@@ -6,7 +6,7 @@
  * compatible open source license.
  */
 
-package org.opensearch.grpc.services;
+package org.opensearch.grpc.services.search;
 
 import io.grpc.stub.StreamObserver;
 
@@ -15,14 +15,9 @@ import org.opensearch.client.node.NodeClient;
 import org.opensearch.core.action.ActionListener;
 
 import opensearch.proto.services.SearchServiceGrpc;
-import opensearch.protos.ExplainRequest;
-import opensearch.protos.ExplainResponse;
-import opensearch.protos.IndexSearchRequest;
-import opensearch.protos.IndexSearchResponse;
-import opensearch.protos.SearchRequest;
-import opensearch.protos.SearchResponse;
 
-import static org.opensearch.grpc.services.helpers.IndexSearchRequestProtoHelper.searchRequestFromProto;
+import static org.opensearch.grpc.services.search.SearchRequestProtoHelper.searchRequestFromProto;
+import static org.opensearch.grpc.services.search.SearchRequestProtoHelper.searchResponseToProto;
 
 public class SearchServiceImpl extends SearchServiceGrpc.SearchServiceImplBase {
     private final NodeClient client;
@@ -32,9 +27,9 @@ public class SearchServiceImpl extends SearchServiceGrpc.SearchServiceImplBase {
     }
 
     private static class SearchRequestActionListener implements ActionListener<org.opensearch.action.search.SearchResponse> {
-        private StreamObserver<IndexSearchResponse> respObserver = null;
+        private StreamObserver<opensearch.proto.SearchResponse> respObserver = null;
 
-        public SearchRequestActionListener(StreamObserver<IndexSearchResponse> responseObserver){
+        public SearchRequestActionListener(StreamObserver<opensearch.proto.SearchResponse> responseObserver){
             super();
             respObserver = responseObserver;
         }
@@ -42,7 +37,7 @@ public class SearchServiceImpl extends SearchServiceGrpc.SearchServiceImplBase {
         @Override
         public void onResponse(org.opensearch.action.search.SearchResponse response) {
             try {
-                IndexSearchResponse protoResponse = respToProto(response);
+                opensearch.proto.SearchResponse protoResponse = searchResponseToProto(response);
                 respObserver.onNext(protoResponse);
                 respObserver.onCompleted();
             } catch (Exception e) {
@@ -60,32 +55,10 @@ public class SearchServiceImpl extends SearchServiceGrpc.SearchServiceImplBase {
         }
     };
 
-    // TODO: Redundant with indexSearch
     @Override
-    public void search(SearchRequest proto, StreamObserver<SearchResponse> responseObserver) {
-        throw new UnsupportedOperationException("Redundant search - Please use IndexSearch");
-    }
-
-    @Override
-    public void indexSearch(IndexSearchRequest proto, StreamObserver<IndexSearchResponse> responseObserver) {
-        org.opensearch.action.search.SearchRequest searchReq = searchRequestFromProto(proto);
+    public void search(opensearch.proto.SearchRequest searchRequestProto, StreamObserver<opensearch.proto.SearchResponse> responseObserver) {
+        org.opensearch.action.search.SearchRequest searchReq = searchRequestFromProto(searchRequestProto);
         SearchRequestActionListener listener = new SearchRequestActionListener(responseObserver);
         client.execute(SearchAction.INSTANCE, searchReq, listener);
-    }
-
-    @Override
-    public void explain(ExplainRequest request, StreamObserver<ExplainResponse> responseObserver) {
-        // TODO: IMPL
-        super.explain(request, responseObserver);
-    }
-
-
-
-
-
-
-    // TODO: IMPL
-    private static IndexSearchResponse respToProto(org.opensearch.action.search.SearchResponse response) {
-        return IndexSearchResponse.newBuilder().build();
     }
 }
