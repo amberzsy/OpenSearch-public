@@ -8,6 +8,8 @@
 
 package org.opensearch.grpc.services.search;
 
+import org.opensearch.index.query.MatchAllQueryBuilder;
+
 public class SearchRequestBodyProtoHelper {
     public static org.opensearch.search.builder.SearchSourceBuilder searchSourceBuilderFromProto(opensearch.proto.SearchRequest searchRequestProto, opensearch.proto.SearchRequestBody searchRequestBodyProto) {
         org.opensearch.search.builder.SearchSourceBuilder sourceBuilder = new org.opensearch.search.builder.SearchSourceBuilder();
@@ -25,8 +27,8 @@ public class SearchRequestBodyProtoHelper {
         }
         */
 
-        // TODO: POC only implements match all query
-
+        // TODO: Support more queries
+        sourceBuilder.query(new MatchAllQueryBuilder());
         return sourceBuilder;
     }
 }
