@@ -15,6 +15,8 @@ import org.opensearch.client.node.NodeClient;
 import org.opensearch.core.action.ActionListener;
 
 import opensearch.proto.services.SearchServiceGrpc;
+import org.opensearch.wlm.QueryGroupTask;
+import org.opensearch.wlm.WorkloadManagementTransportInterceptor;
 
 import static org.opensearch.grpc.services.search.SearchRequestProtoHelper.searchRequestFromProto;
 import static org.opensearch.grpc.services.search.SearchRequestProtoHelper.searchResponseToProto;
@@ -59,6 +61,23 @@ public class SearchServiceImpl extends SearchServiceGrpc.SearchServiceImplBase {
     public void search(opensearch.proto.SearchRequest searchRequestProto, StreamObserver<opensearch.proto.SearchResponse> responseObserver) {
         org.opensearch.action.search.SearchRequest searchReq = searchRequestFromProto(searchRequestProto);
         SearchRequestActionListener listener = new SearchRequestActionListener(responseObserver);
+
+        /*
+        When we execute a TransportSearchAction a SearchRequestOperationsListener is registered for the action to track resource usage for the request QueryGroup.
+        The QueryGroupTask.QUERY_GROUP_ID_HEADER uniquely identifies each QueryGroup
+        Typically the
+         */
+
+//        WorkloadManagementTransportInterceptor
+//        if (isSearchWorkloadRequest(task)) {
+//            ((QueryGroupTask) task).setQueryGroupId(threadPool.getThreadContext());
+//            final String queryGroupId = ((QueryGroupTask) (task)).getQueryGroupId();
+//            queryGroupService.rejectIfNeeded(queryGroupId);
+//        }
+
+        //
+//        client.threadPool().getThreadContext().putHeader(name, String.join(",", distinctHeaderValues));
+
         client.execute(SearchAction.INSTANCE, searchReq, listener);
     }
 }
