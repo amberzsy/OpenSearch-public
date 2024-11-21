@@ -32,6 +32,9 @@
 
 package org.opensearch.search.builder;
 
+import opensearch.proto.QueryContainer;
+import opensearch.proto.TermQuery;
+import opensearch.proto.TermQueryFieldValue;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.common.Booleans;
@@ -53,9 +56,7 @@ import org.opensearch.core.xcontent.XContentHelper;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.mapper.DerivedField;
 import org.opensearch.index.mapper.DerivedFieldMapper;
-import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.query.QueryRewriteContext;
-import org.opensearch.index.query.Rewriteable;
+import org.opensearch.index.query.*;
 import org.opensearch.script.Script;
 import org.opensearch.search.SearchExtBuilder;
 import org.opensearch.search.aggregations.AggregationBuilder;
@@ -77,11 +78,7 @@ import org.opensearch.search.sort.SortOrder;
 import org.opensearch.search.suggest.SuggestBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.opensearch.index.query.AbstractQueryBuilder.parseInnerQueryBuilder;
 import static org.opensearch.search.internal.SearchContext.TRACK_TOTAL_HITS_ACCURATE;
@@ -235,6 +232,7 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
      * Read from a stream.
      */
     public SearchSourceBuilder(StreamInput in) throws IOException {
+        System.out.println("=========");
         aggregations = in.readOptionalWriteable(AggregatorFactories.Builder::new);
         explain = in.readOptionalBoolean();
         fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
@@ -306,6 +304,7 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        System.out.println("=========");
         out.writeOptionalWriteable(aggregations);
         out.writeOptionalBoolean(explain);
         out.writeOptionalWriteable(fetchSourceContext);
@@ -385,6 +384,12 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
         if (out.getVersion().onOrAfter(Version.V_2_18_0)) {
             out.writeOptionalString(searchPipeline);
         }
+    }
+
+    public SearchSourceBuilder(opensearch.proto.SearchRequest proto) {
+        this();
+        queryBuilder = QueryBuilders.matchAllQuery();
+
     }
 
     /**

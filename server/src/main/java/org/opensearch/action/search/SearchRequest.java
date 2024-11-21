@@ -162,6 +162,13 @@ public class SearchRequest extends ActionRequest implements IndicesRequest.Repla
         this.source = source;
     }
 
+    public SearchRequest(opensearch.proto.SearchRequest proto) {
+        this();
+        source = new SearchSourceBuilder(proto);
+        searchType = SearchType.QUERY_THEN_FETCH;
+        batchedReduceSize = DEFAULT_BATCHED_REDUCE_SIZE;
+    }
+
     /**
      * Deep clone a SearchRequest
      *
