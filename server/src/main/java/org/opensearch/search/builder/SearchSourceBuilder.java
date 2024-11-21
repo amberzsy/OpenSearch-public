@@ -32,6 +32,7 @@
 
 package org.opensearch.search.builder;
 
+import opensearch.proto.GeneralNumber;
 import opensearch.proto.QueryContainer;
 import opensearch.proto.TermQuery;
 import opensearch.proto.TermQueryFieldValue;
@@ -388,8 +389,41 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
 
     public SearchSourceBuilder(opensearch.proto.SearchRequest proto) {
         this();
-        queryBuilder = QueryBuilders.matchAllQuery();
+        QueryContainer query = proto.getRequestBody().getQuery();
+        if (query.hasMatchAll()) {
+            queryBuilder = QueryBuilders.matchAllQuery();
+        }
+        if (!query.getTermMap().isEmpty()) {
+            System.out.println("============ HERE");
+            Map<String, TermQueryFieldValue> termQueryFieldValueMap = query.getTermMap();
+            Set<String> fields = termQueryFieldValueMap.keySet();
+            String fieldName = fields.stream().findFirst().get();
+            TermQueryFieldValue termQueryFieldValue = termQueryFieldValueMap.get(fieldName);
+            if (termQueryFieldValue.hasTermQuery()) {
+                TermQuery termQuery = termQueryFieldValue.getTermQuery();
+                if (termQuery.getValue().hasBoolValue()) {
+                    queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getBoolValue());
+                } else if (termQuery.getValue().hasStringValue()) {
+                    System.out.println("fieldName: " + fieldName + " ======= VALUE ==== " + termQuery.getValue().getStringValue().getValue());
+                    queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getStringValue().getValue());
+                } else if (termQuery.getValue().hasGeneralNumber()) {
+                    GeneralNumber valueNumber = termQuery.getValue().getGeneralNumber();
+                    if (valueNumber.hasDoubleValue()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getDoubleValue());
+                    } else if (valueNumber.hasInt32Value()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getInt32Value());
+                    } else if (valueNumber.hasInt64Value()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getInt64Value());
+                    } else if (valueNumber.hasFloatValue()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getFloatValue());
+                    }
+                }
 
+            } else if (termQueryFieldValue.hasFieldValue()) {
+                // TODO
+            }
+
+        }
     }
 
     /**
