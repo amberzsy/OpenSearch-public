@@ -32,6 +32,10 @@
 
 package org.opensearch.search.builder;
 
+import opensearch.proto.GeneralNumber;
+import opensearch.proto.QueryContainer;
+import opensearch.proto.TermQuery;
+import opensearch.proto.TermQueryFieldValue;
 import org.opensearch.OpenSearchException;
 import org.opensearch.Version;
 import org.opensearch.common.Booleans;
@@ -53,9 +57,7 @@ import org.opensearch.core.xcontent.XContentHelper;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.mapper.DerivedField;
 import org.opensearch.index.mapper.DerivedFieldMapper;
-import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.query.QueryRewriteContext;
-import org.opensearch.index.query.Rewriteable;
+import org.opensearch.index.query.*;
 import org.opensearch.script.Script;
 import org.opensearch.search.SearchExtBuilder;
 import org.opensearch.search.aggregations.AggregationBuilder;
@@ -77,11 +79,7 @@ import org.opensearch.search.sort.SortOrder;
 import org.opensearch.search.suggest.SuggestBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.opensearch.index.query.AbstractQueryBuilder.parseInnerQueryBuilder;
 import static org.opensearch.search.internal.SearchContext.TRACK_TOTAL_HITS_ACCURATE;
@@ -384,6 +382,43 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
         }
         if (out.getVersion().onOrAfter(Version.V_2_18_0)) {
             out.writeOptionalString(searchPipeline);
+        }
+    }
+
+    public SearchSourceBuilder(opensearch.proto.SearchRequest proto) {
+        this();
+        QueryContainer query = proto.getRequestBody().getQuery();
+        if (query.hasMatchAll()) {
+            queryBuilder = QueryBuilders.matchAllQuery();
+        }
+        if (!query.getTermMap().isEmpty()) {
+            Map<String, TermQueryFieldValue> termQueryFieldValueMap = query.getTermMap();
+            Set<String> fields = termQueryFieldValueMap.keySet();
+            String fieldName = fields.stream().findFirst().get();
+            TermQueryFieldValue termQueryFieldValue = termQueryFieldValueMap.get(fieldName);
+            if (termQueryFieldValue.hasTermQuery()) {
+                TermQuery termQuery = termQueryFieldValue.getTermQuery();
+                if (termQuery.getValue().hasBoolValue()) {
+                    queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getBoolValue());
+                } else if (termQuery.getValue().hasStringValue()) {
+                    queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getStringValue().getValue());
+                } else if (termQuery.getValue().hasGeneralNumber()) {
+                    GeneralNumber valueNumber = termQuery.getValue().getGeneralNumber();
+                    if (valueNumber.hasDoubleValue()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getDoubleValue());
+                    } else if (valueNumber.hasInt32Value()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getInt32Value());
+                    } else if (valueNumber.hasInt64Value()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getInt64Value());
+                    } else if (valueNumber.hasFloatValue()) {
+                        queryBuilder = QueryBuilders.termQuery(fieldName, termQuery.getValue().getGeneralNumber().getFloatValue());
+                    }
+                }
+
+            } else if (termQueryFieldValue.hasFieldValue()) {
+                // TODO
+            }
+
         }
     }
 

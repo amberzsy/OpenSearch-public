@@ -228,6 +228,7 @@ public class RestActions {
 
     public static QueryBuilder urlParamsToQueryBuilder(RestRequest request) {
         String queryString = request.param("q");
+        System.out.println("queryString: " + queryString);
         if (queryString == null) {
             return null;
         }

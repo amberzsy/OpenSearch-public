@@ -51,12 +51,10 @@ import org.opensearch.search.Scroll;
 import org.opensearch.search.builder.PointInTimeBuilder;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.internal.SearchContext;
+import static org.opensearch.rest.action.search.RestSearchAction.TOTAL_HITS_AS_INT_PARAM;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.opensearch.action.ValidateActions.addValidationError;
 
@@ -160,6 +158,104 @@ public class SearchRequest extends ActionRequest implements IndicesRequest.Repla
         }
         indices(indices);
         this.source = source;
+    }
+
+    public SearchRequest(opensearch.proto.SearchRequest proto) {
+        this();
+        source = new SearchSourceBuilder(proto);
+        if (proto.hasPreFilterShardSize()) {
+            batchedReduceSize = proto.getBatchedReduceSize();
+        }
+        if (proto.hasMaxConcurrentShardRequests()) {
+            maxConcurrentShardRequests = proto.getMaxConcurrentShardRequests();
+        }
+        if(proto.hasAllowPartialSearchResults()) {
+            allowPartialSearchResults = proto.getAllowPartialSearchResults();
+        } else {
+            allowPartialSearchResults = false;
+        }
+        if (proto.hasPhaseTook()) {
+            phaseTook = proto.getPhaseTook();
+        } else {
+            phaseTook = true;
+        }
+        switch (proto.getSearchType()) {
+            case SEARCH_TYPE_QUERY_THEN_FETCH:
+                searchType = SearchType.QUERY_THEN_FETCH;
+                break;
+            case SEARCH_TYPE_DFS_QUERY_THEN_FETCH:
+                searchType = SearchType.DFS_QUERY_THEN_FETCH;
+                break;
+            default:
+                searchType = SearchType.DEFAULT;
+        }
+        if (proto.hasRequestCache()) {
+            requestCache = proto.getRequestCache();
+        }
+        preference = proto.getPreference();
+        // ========= NOT WORKING ==============
+//        routing = String.join(",", proto.getRoutingList());
+//        EnumSet<IndicesOptions.Option> indicesoOptions = EnumSet.noneOf(IndicesOptions.Option.class);
+//        EnumSet<IndicesOptions.WildcardStates> wildcardStates = EnumSet.noneOf(IndicesOptions.WildcardStates.class);
+//
+//        if (!proto.hasAllowNoIndices()) { // add option by default
+//            indicesoOptions.add(IndicesOptions.Option.ALLOW_NO_INDICES);
+//        } else if (proto.getAllowNoIndices()) {
+//            indicesoOptions.add(IndicesOptions.Option.ALLOW_NO_INDICES);
+//        }
+//
+////        if (proto.getIgnoreUnavailable()) {
+//            indicesoOptions.add(IndicesOptions.Option.IGNORE_UNAVAILABLE);
+////        }
+//
+//        if (!proto.hasIgnoreThrottled()) { // add option by default
+//            indicesoOptions.add(IndicesOptions.Option.IGNORE_THROTTLED);
+//        } else if (proto.getIgnoreThrottled()) {
+//            indicesoOptions.add(IndicesOptions.Option.IGNORE_THROTTLED);
+//        }
+//
+//        for (opensearch.proto.SearchRequest.ExpandWildcard wc : proto.getExpandWildcardsList()) {
+//            switch (wc) {
+//                case EXPAND_WILDCARD_OPEN:
+//                    wildcardStates.add(IndicesOptions.WildcardStates.OPEN);
+//                    break;
+//                case EXPAND_WILDCARD_CLOSED:
+//                    wildcardStates.add(IndicesOptions.WildcardStates.CLOSED);
+//                    break;
+//                case EXPAND_WILDCARD_HIDDEN:
+//                    wildcardStates.add(IndicesOptions.WildcardStates.HIDDEN);
+//                    break;
+//                case EXPAND_WILDCARD_NONE:
+//                    wildcardStates.clear();
+//                    break;
+//                case EXPAND_WILDCARD_ALL:
+//                    wildcardStates.addAll(EnumSet.allOf(IndicesOptions.WildcardStates.class));
+//                    break;
+//            }
+//        }
+//        indicesOptions = new IndicesOptions(indicesoOptions, wildcardStates);
+
+        if (proto.hasSearchPipeline()) {
+            pipeline = proto.getSearchPipeline();
+        }
+        allowPartialSearchResults = proto.getAllowPartialSearchResults();
+        if (proto.hasCancelAfterTimeInterval()) {
+            TimeValue cancelAfter = new TimeValue(Long.parseLong(proto.getCancelAfterTimeInterval()));
+            cancelAfterTimeInterval = cancelAfter;
+        }
+        ccsMinimizeRoundtrips = proto.getCcsMinimizeRoundtrips();
+        Integer trackTotalHitsUpTo = source().trackTotalHitsUpTo();
+        if (trackTotalHitsUpTo == null) {
+            source().trackTotalHits(true);
+        } else if (trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_ACCURATE && trackTotalHitsUpTo != SearchContext.TRACK_TOTAL_HITS_DISABLED) {
+            throw new IllegalArgumentException(
+                "["
+                    + TOTAL_HITS_AS_INT_PARAM
+                    + "] cannot be used "
+                    + "if the tracking of total hits is not accurate, got "
+                    + trackTotalHitsUpTo
+            );
+        }
     }
 
     /**
